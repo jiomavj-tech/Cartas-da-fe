@@ -221,6 +221,20 @@ body[data-screen=game] header.topbar,body[data-screen=results] header.topbar{dis
 #game .winner-letter{min-width:22px;height:22px}
 #game #step{flex:none}
 #game .pill{padding:5px 8px}
+.rank-panel{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.rank-list{display:flex;flex-wrap:wrap;gap:5px}
+.rank-list:empty{display:none}
+.rank-chip{border-radius:999px;padding:4px 10px;font-size:13px;font-weight:800;border:1px solid}
+.rank-chip.ok{background:#174c3a;border-color:#64dd9f;color:#d9ffe9}
+.rank-chip.bad{background:#532d39;border-color:#ed8092;color:#ffe1e6}
+.rank-judge{border:2px solid #f5c96b;border-radius:12px;padding:8px;background:#1f3347}
+.rank-who{text-align:center;font-weight:850;font-size:15px;margin-bottom:2px}
+.rank-answer{margin:0;text-align:center;font-weight:800;color:#c7f8d9}
+#rankFinish:disabled{opacity:.5}
+#game .buzz-buttons button.done{opacity:.45}
+#game .buzz-buttons button:disabled{cursor:default}
+#game:has(#rankPanel:not(.hidden)) .timer-display{display:none}
+#game:has(#rankPanel:not(.hidden)) #voiceStatus,#game:has(#rankPanel:not(.hidden)) .voice-actions{display:none}
 </style>
 </head>
 <body>
@@ -277,9 +291,15 @@ body[data-screen=game] header.topbar,body[data-screen=results] header.topbar{dis
   <div id="voiceStatus" class="voice-status">Preparando leitura...</div>
   <div class="voice-actions"><button id="repeatVoice" class="btn alt" type="button">🔊 Repetir pergunta</button><button id="manualClock" class="btn ghost hidden" type="button">▶ Iniciar tempo</button></div>
   <div id="buzzSection" class="hidden">
-    <div class="buzz-title">Quem respondeu primeiro?</div>
+    <div class="buzz-title" id="buzzTitle">Toque em quem respondeu, na ordem em que falou</div>
     <div id="buzzButtons" class="buzz-buttons"></div>
-    <div class="all-answer-row duo"><button id="allResponded" class="btn alt" type="button">👥 Todos responderam</button><button id="nobody" class="btn ghost" type="button">Ninguém respondeu</button></div>
+    <div class="all-answer-row" id="nobodyRow"><button id="allResponded" class="btn alt hidden" type="button">👥 Todos responderam</button><button id="nobody" class="btn ghost" type="button">Ninguém respondeu</button></div>
+    <div id="rankPanel" class="rank-panel hidden" aria-live="polite">
+      <div id="rankList" class="rank-list"></div>
+      <div id="rankJudge" class="rank-judge hidden"><div id="rankWho" class="rank-who"></div><div class="duo"><button id="rankOk" class="btn" type="button">✓ Acertou</button><button id="rankBad" class="btn alt" type="button">✕ Errou</button></div></div>
+      <div class="duo"><button id="rankShowAnswer" class="btn ghost" type="button">👁 Ver resposta</button><button id="rankFinish" class="btn alt" type="button">Encerrar carta</button></div>
+      <p id="rankAnswer" class="rank-answer hidden"></p>
+    </div>
   </div>
   <div id="judgePanel" class="hidden" aria-live="polite">
     <div id="judgeName" class="judge-name"></div>
@@ -345,12 +365,16 @@ body[data-screen=game] header.topbar,body[data-screen=results] header.topbar{dis
     <h3>Níveis e pontos</h3>
     <ul><li>🟢 <b>Verde</b> — perguntas fáceis · 1 ponto</li><li>🔵 <b>Azul</b> — perguntas médias · 3 pontos</li><li>🔴 <b>Vermelho</b> — desafio · 6 pontos</li></ul>
     <p>São 450 perguntas: 150 de cada cor. O <b>baralho misto</b> sorteia das três cores.</p>
+    <h3>Pontos na disputa</h3>
+    <p>Conta a ordem <b>entre quem acertou</b>. Se o 1º a falar errar e o 2º acertar, o 2º leva a pontuação cheia.</p>
+    <ul><li>🔴 Vermelho: 6 · 4 · 2 · 1</li><li>🔵 Azul: 3 · 2 · 1 · 1</li><li>🟢 Verde: só o 1º que acertar leva 1</li></ul>
+    <p>Na <b>Carta Cilada</b>, cada pessoa que errar perde os pontos cheios da carta (nunca fica abaixo de zero).</p>
     <h3>Glossário</h3>
     <dl>
       <dt>Carta</dt><dd>Uma pergunta da partida.</dd>
       <dt>Partida</dt><dd>Do “Sortear e começar” até o resultado final.</dd>
-      <dt>Carta Cilada ⚠</dt><dd>A cada 7 cartas, uma vale como armadilha: quem errar <b>perde</b> os pontos dela. Pode ser desligada na tela inicial.</dd>
-      <dt>Disputa</dt><dd>Todos respondem ao mesmo tempo, em voz alta. Quem responder primeiro toca no próprio nome e o grupo confere a resposta.</dd>
+      <dt>Carta Cilada ⚠</dt><dd>A cada 7 cartas, uma vale como armadilha: cada um que errar <b>perde</b> os pontos cheios dela. Pode ser desligada na tela inicial.</dd>
+      <dt>Disputa</dt><dd>Todos respondem em voz alta. O juiz toca nos nomes <b>na ordem em que cada um falou</b> e marca se acertou ou errou. Quem acertar primeiro leva mais pontos.</dd>
       <dt>Contagem de 3 segundos</dt><dd>Aviso antes de cada pergunta nos modos de disputa. Com voz, o cronômetro começa depois da leitura; sem voz, ao fim da contagem.</dd>
       <dt>Placar</dt><dd>Pode ser escondido durante a partida para manter o suspense.</dd>
     </dl>
@@ -616,8 +640,8 @@ function getTimerSeconds(){
   return m*60+s;
 }
 function start(){stopEverything();const seconds=getTimerSeconds();if(seconds===null){$('customMinutes').focus();return;}startNewGameHistory();const n=Number($('playerCount').value),diff=$('difficulty').value,limit=Number($('roundCount').value),ciladas=$('cilada').checked,mode=$('questionMode').value;const players=Array.from({length:n},(_,i)=>({name:$('name'+i).value.trim()||'Jogador '+(i+1),score:0,won:0}));state={players,deck:[],limit:limit===0?Infinity:limit,diff,pos:0,seconds,ciladas,awardedPlayers:new Set(),voice:mode!=='alternativas',readAloud:mode==='voz',scoresVisible:$('showScores').checked,mode,lock:false,correct:0,answered:0,buzzerIndex:null,clockStarted:false};show('game');renderScores();present();}
-function present(){stopEverything();if(!state||state.pos>=state.limit){finish();return;}state.lock=false;state.buzzerIndex=null;state.clockStarted=false;state.awardedPlayers=new Set();pickerMode=null;$('winnerPicker').classList.add('hidden');const item=state.deck[state.pos]||(state.deck[state.pos]=drawQuestion(state.diff));const isCilada=state.ciladas&&state.pos>0&&((state.pos+1)%7===0);state.special=isCilada;state.item=item;state.opts=shuffle(item.choices);const player=state.players[state.pos%state.players.length];$('step').textContent='Carta '+(state.pos+1)+' / '+(Number.isFinite(state.limit)?state.limit:'∞')+'';$('level').textContent=({verde:'🟢 Verde',azul:'🔵 Azul',vermelho:'🔴 Vermelho'})[item.level]+' · '+POINTS[item.level]+(POINTS[item.level]===1?' pt':' pts');$('level').title=LEVELS[item.level];$('turn').replaceChildren();$('turn').append(document.createTextNode(state.voice?'Disputa aberta: ':'Vez de '));const b=document.createElement('b');b.textContent=state.voice?'todos os jogadores':player.name;$('turn').append(b);$('card').className='card '+(item.level==='azul'?'blue':item.level==='vermelho'?'red':'')+(isCilada?' cilada':'');$('type').textContent=isCilada?'⚠ CARTA CILADA':'PERGUNTAS DA FÉ';$('question').textContent=item.q;$('cardPoints').textContent=(isCilada?'ERRO: −'+POINTS[item.level]+' PONTOS · ':'')+'ACERTO: +'+POINTS[item.level]+' PONTOS';$('progressFill').style.width=(Number.isFinite(state.limit)?100*state.pos/state.limit:0)+'%';$('feedback').className='feedback hidden';$('feedback').replaceChildren();$('choiceAwardAll').classList.add('hidden');$('next').classList.add('hidden');$('answers').replaceChildren();$('judgePanel').classList.add('hidden');$('judgeResult').classList.add('hidden');$('revealVoice').classList.remove('hidden');$('voicePanel').classList.toggle('hidden',!state.voice);$('answers').classList.toggle('hidden',state.voice);$('buzzButtons').replaceChildren();
- if(state.voice){state.players.forEach((p,idx)=>{const button=document.createElement('button');button.type='button';button.textContent='✋ '+p.name;button.addEventListener('click',()=>buzzer(idx));$('buzzButtons').append(button);});scheduleVoice();return;}
+function present(){stopEverything();if(!state||state.pos>=state.limit){finish();return;}state.lock=false;resetRanking();state.buzzerIndex=null;state.clockStarted=false;state.awardedPlayers=new Set();pickerMode=null;$('winnerPicker').classList.add('hidden');const item=state.deck[state.pos]||(state.deck[state.pos]=drawQuestion(state.diff));const isCilada=state.ciladas&&state.pos>0&&((state.pos+1)%7===0);state.special=isCilada;state.item=item;state.opts=shuffle(item.choices);const player=state.players[state.pos%state.players.length];$('step').textContent='Carta '+(state.pos+1)+' / '+(Number.isFinite(state.limit)?state.limit:'∞')+'';$('level').textContent=({verde:'🟢',azul:'🔵',vermelho:'🔴'})[item.level]+' '+POINTS[item.level]+(POINTS[item.level]===1?' pt':' pts');$('level').title=LEVELS[item.level];$('turn').replaceChildren();$('turn').append(document.createTextNode(state.voice?'Disputa aberta: ':'Vez de '));const b=document.createElement('b');b.textContent=state.voice?'todos os jogadores':player.name;$('turn').append(b);$('card').className='card '+(item.level==='azul'?'blue':item.level==='vermelho'?'red':'')+(isCilada?' cilada':'');$('type').textContent=isCilada?'⚠ CARTA CILADA':'PERGUNTAS DA FÉ';$('question').textContent=item.q;$('cardPoints').textContent=(isCilada?'ERRO: −'+POINTS[item.level]+' PONTOS · ':'')+'ACERTO: +'+POINTS[item.level]+' PONTOS';$('progressFill').style.width=(Number.isFinite(state.limit)?100*state.pos/state.limit:0)+'%';$('feedback').className='feedback hidden';$('feedback').replaceChildren();$('choiceAwardAll').classList.add('hidden');$('next').classList.add('hidden');$('answers').replaceChildren();$('judgePanel').classList.add('hidden');$('judgeResult').classList.add('hidden');$('revealVoice').classList.remove('hidden');$('voicePanel').classList.toggle('hidden',!state.voice);$('answers').classList.toggle('hidden',state.voice);$('buzzButtons').replaceChildren();
+ if(state.voice){state.players.forEach((p,idx)=>{const button=document.createElement('button');button.type='button';button.textContent='✋ '+p.name;button.dataset.idx=String(idx);button.addEventListener('click',()=>registerAnswer(idx));$('buzzButtons').append(button);});scheduleVoice();return;}
  state.opts.forEach((opt,idx)=>{const btn=document.createElement('button');btn.className='answer';const letter=document.createElement('span');letter.className='letter';letter.textContent='ABCD'[idx];const txt=document.createElement('span');txt.textContent=opt;btn.append(letter,txt);btn.addEventListener('click',()=>resolve(opt,'answer'));$('answers').append(btn);});if(state.seconds>0){$('timerDisplay').querySelector('.timer-title').textContent='⏱ TEMPO';state.remaining=state.seconds;state.deadline=Date.now()+state.seconds*1000;updateTimer();interval=setInterval(()=>{if(!state||state.lock){stopClock();return;}state.remaining=Math.max(0,Math.ceil((state.deadline-Date.now())/1000));updateTimer();if(state.remaining<=0)resolve(null,'time');},200);}else{$('timer').textContent='∞';$('timerDisplay').querySelector('.timer-title').textContent='SEM LIMITE DE TEMPO';$('timerDisplay').classList.remove('danger');}}
 function updateTimer(){const v=Math.max(0,state.remaining);$('timer').textContent=String(Math.floor(v/60)).padStart(2,'0')+':'+String(v%60).padStart(2,'0');$('timerDisplay').classList.toggle('danger',v<=10);}
 function resolve(selected,reason){if(!state||state.lock)return;state.lock=true;stopClock();const item=state.item,player=state.players[state.pos%state.players.length],correct=selected===item.correct;state.answered++;if(correct){setAwardedPlayers([state.pos%state.players.length]);}else if(state.special){player.score=Math.max(0,player.score-POINTS[item.level]);}for(const btn of $('answers').children){btn.disabled=true;const opt=btn.lastElementChild.textContent;if(opt===item.correct)btn.classList.add('correct');else if(opt===selected)btn.classList.add('wrong');}const feedback=$('feedback');feedback.className='feedback '+(correct?'win':'lose');const strong=document.createElement('strong');strong.textContent=correct?'✓ Resposta correta! +'+POINTS[item.level]+' pontos':reason==='time'?'⌛ Tempo esgotado!':'✕ Não foi desta vez!';const answer=document.createElement('p');answer.textContent='Resposta: '+item.correct;const ref=document.createElement('small');ref.textContent='Referência: '+item.ref;feedback.append(strong,answer,ref);if(!correct&&state.special){const p=document.createElement('p');p.textContent='Cilada! −'+POINTS[item.level]+' pontos (mínimo: zero).';feedback.append(p);}renderScores();if(state.players.length>1)$('choiceAwardAll').classList.remove('hidden');$('next').textContent=state.pos===state.limit-1?'Ver resultado':'Próxima carta';$('next').classList.remove('hidden');}
@@ -762,5 +786,53 @@ document.getElementById('questionMode').addEventListener('change',syncVoiceRow);
 // Ajusta o tamanho da letra da pergunta para caber no espaço livre da carta.
 function fitQuestion(){const q=document.getElementById('question'),box=q&&q.parentElement;if(!q||!box||!box.clientHeight)return;let size=Math.min(26,Math.max(16,window.innerWidth/14));q.style.fontSize=size+'px';let guard=0;while(box.scrollHeight>box.clientHeight+1&&size>14&&guard++<40){size-=1;q.style.fontSize=size+'px';}}
 (()=>{const box=document.querySelector('#game .card-inner');if(window.ResizeObserver&&box)new ResizeObserver(()=>fitQuestion()).observe(box);const q=document.getElementById('question');if(window.MutationObserver&&q)new MutationObserver(()=>requestAnimationFrame(fitQuestion)).observe(q,{childList:true,characterData:true,subtree:true});window.addEventListener('resize',fitQuestion);document.body.dataset.screen='setup';setTimeout(()=>{syncVoiceRow();updateVoiceSummary();},0);setTimeout(updateVoiceSummary,1500);})();
+
+// ===== Disputa com ordem de acerto =====
+// Pontos por posição entre os que ACERTARAM (1º, 2º, 3º, 4º).
+const RANK_POINTS={vermelho:[6,4,2,1],azul:[3,2,1,1],verde:[1,0,0,0]};
+function rankPoints(level,pos){const t=RANK_POINTS[level]||[POINTS[level]];return t[Math.min(pos,t.length-1)];}
+function resetRanking(){if(!state)return;state.order=[];state.pending=null;$('rankPanel').classList.add('hidden');$('rankJudge').classList.add('hidden');$('rankAnswer').classList.add('hidden');$('rankList').replaceChildren();$('nobodyRow').classList.remove('hidden');$('buzzTitle').textContent='Toque em quem respondeu, na ordem em que falou';}
+function syncRankButtons(){for(const b of $('buzzButtons').children){const i=Number(b.dataset.idx);const done=state.order.some(e=>e.i===i);b.disabled=done||state.pending!==null||state.lock;b.classList.toggle('done',done);}}
+function registerAnswer(i){
+ if(!state||!state.voice||state.lock||state.pending!==null||state.order.some(e=>e.i===i))return;
+ if(!state.order.length){if(!state.clockStarted)return;state.clockStarted=false;stopClock();stopVoice();$('nobodyRow').classList.add('hidden');$('rankPanel').classList.remove('hidden');setStatus('Tempo pausado. Registre quem respondeu, na ordem.');}
+ state.pending=i;$('rankWho').textContent=state.players[i].name+' respondeu. Acertou?';$('rankJudge').classList.remove('hidden');
+ $('buzzTitle').textContent='Quem respondeu depois?';syncRankButtons();
+}
+function judgeAnswer(ok){
+ if(!state||state.lock||state.pending===null)return;
+ const i=state.pending;state.pending=null;
+ const pos=state.order.filter(e=>e.ok).length;
+ const pts=ok?rankPoints(state.item.level,pos):(state.special?-POINTS[state.item.level]:0);
+ state.order.push({i,ok,pts,pos});
+ const chip=document.createElement('span');chip.className='rank-chip '+(ok?'ok':'bad');
+ chip.textContent=ok?(pos+1)+'º ✓ '+state.players[i].name+' +'+pts:'✕ '+state.players[i].name+(pts<0?' '+pts:'');
+ $('rankList').append(chip);$('rankJudge').classList.add('hidden');
+ if(state.order.length>=state.players.length){finishRanked();return;}
+ syncRankButtons();
+}
+function finishRanked(){
+ if(!state||state.lock)return;
+ if(state.pending!==null)return;
+ if(!state.order.length){voiceResolve(false);return;}
+ state.lock=true;stopEverything();state.answered++;
+ const lvl=state.item.level;let anyOk=false;
+ for(const e of state.order){const p=state.players[e.i];if(e.ok){anyOk=true;if(e.pts>0){p.score+=e.pts;p.won++;}}else if(state.special){p.score=Math.max(0,p.score-POINTS[lvl]);}}
+ if(anyOk)state.correct++;
+ const fb=$('feedback');fb.className='feedback '+(anyOk?'win':'lose');fb.replaceChildren();
+ const title=document.createElement('strong');
+ const winners=state.order.filter(e=>e.ok);
+ title.textContent=winners.length?'✓ '+winners.map(e=>state.players[e.i].name+' +'+e.pts).join(' · '):'✕ Ninguém acertou.';
+ fb.append(title);
+ if(state.special&&state.order.some(e=>!e.ok)){const x=document.createElement('p');x.textContent='Cilada: '+state.order.filter(e=>!e.ok).map(e=>state.players[e.i].name+' −'+POINTS[lvl]).join(' · ')+' (mínimo zero).';fb.append(x);}
+ const a=document.createElement('p');a.textContent='Resposta: '+state.item.correct;const r=document.createElement('small');r.textContent='Referência: '+state.item.ref;fb.append(a,r);
+ renderScores();$('voicePanel').classList.add('hidden');
+ $('next').textContent=state.pos===state.limit-1?'Ver resultado':(state.readAloud?'Próxima carta · ler em 3 segundos':'Próxima carta · iniciar em 3 segundos');
+ $('next').classList.remove('hidden');
+}
+$('rankOk').addEventListener('click',()=>judgeAnswer(true));
+$('rankBad').addEventListener('click',()=>judgeAnswer(false));
+$('rankFinish').addEventListener('click',finishRanked);
+$('rankShowAnswer').addEventListener('click',()=>{if(!state)return;const el=$('rankAnswer');el.textContent='Resposta: '+state.item.correct;el.classList.toggle('hidden');});
 </script>
 </body></html>
