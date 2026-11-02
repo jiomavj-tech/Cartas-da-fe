@@ -21,3 +21,10 @@ Em `Settings > Pages`, configurar `Deploy from a branch`, `main`, `/ (root)`. Ab
 Ao alterar qualquer arquivo pré-cacheado, atualizar `VERSION` no service-worker para renovar o cache. O app oferece um botão para atualizar sem interromper a partida. Dados de pontuação e histórico salvos em `localStorage` não são apagados.
 
 Nota: a leitura de voz offline depende do mecanismo TTS instalado no Android; algumas vozes online podem não funcionar sem conexão.
+
+## Instalação e compartilhamento
+
+- Botão **Instalar no celular**: exibe o prompt nativo quando disponível; nos demais navegadores informa o caminho correto pelo menu.
+- Botão **Compartilhar**: usa o menu nativo do sistema (WhatsApp, Telegram etc.); caso indisponível, permite copiar o link.
+- **Baixar jogo em HTML (offline)**: baixa somente `index.html`; não substitui a instalação PWA, que requer os arquivos extras publicados via HTTPS.
+- Caso o GitHub Pages não esteja ativo, configure **Settings → Pages → Deploy from a branch → main / (root)**.

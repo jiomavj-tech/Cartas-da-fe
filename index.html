@@ -80,11 +80,35 @@
 .pwa-update{position:fixed;bottom:12px;left:12px;right:12px;max-width:610px;margin:auto;z-index:80;background:#162f47;border:2px solid #dfbb76;border-radius:15px;box-shadow:0 10px 40px #0009;padding:13px;color:white}
 .pwa-update[hidden]{display:none!important}
 .pwa-update .btn{margin:8px 0 0}
+
+/* Ações sempre visíveis para instalar e compartilhar no celular. */
+.app-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:13px auto 0;max-width:500px}
+.app-actions button{flex:1 1 180px;min-width:0;min-height:48px;border:1px solid #a99263;border-radius:12px;padding:11px 12px;font-weight:850;font-size:14px;color:#172433;background:#f5c96b}
+.app-actions button.share-action{color:#f6f7fc;background:#2a4258;border-color:#8298af}
+.app-actions button:hover{filter:brightness(1.09)}
+.app-actions button:disabled{opacity:.65}
+.action-message{font-size:13px;line-height:1.5;text-align:center;margin:9px auto 0;max-width:500px;color:#cde5ff;min-height:0}
+.action-message:empty{display:none}
+.download-link{display:inline-flex;align-items:center;gap:6px;padding:9px 2px;margin-top:9px;color:#ffdf92;font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.modal-scrim[hidden]{display:none!important}
+.modal-scrim{position:fixed;inset:0;z-index:100;background:#000b;display:flex;align-items:center;justify-content:center;padding:20px}
+.action-modal{width:min(100%,440px);max-height:85dvh;overflow:auto;border-radius:20px;padding:22px;background:#172b41;color:white;border:2px solid #e8c17e;box-shadow:0 15px 50px #000b}
+.action-modal h2{margin:0 0 11px;font:700 24px Georgia,serif}
+.action-modal p{font-size:15px;color:#e5ecf5;line-height:1.5}
+.action-modal .share-url{width:100%;min-width:0;padding:11px 9px;border-radius:9px;border:1px solid #8ba0b2;background:#0e1e30;color:white;font-size:13px}
+.action-modal .btn{margin-top:10px}
+@media(max-width:480px){.app-actions{gap:8px}.app-actions button{flex-basis:calc(50% - 5px);font-size:13px;padding:10px 5px;min-height:51px}.action-modal{padding:18px}}
 </style>
 </head>
 <body>
 <main>
-<header><div class="brand-mark" aria-hidden="true">✝</div><div class="eyebrow">Jogo de conhecimento católico</div><h1>Cartas da Fé</h1><p>450 perguntas · Bíblia · Catecismo · Santos</p></header>
+<header><div class="brand-mark" aria-hidden="true">✝</div><div class="eyebrow">Jogo de conhecimento católico</div><h1>Cartas da Fé</h1><p>450 perguntas · Bíblia · Catecismo · Santos</p>
+<div class="app-actions" role="group" aria-label="Instalar e compartilhar o jogo">
+<button type="button" id="installShortcut">📲 Instalar no celular</button>
+<button type="button" class="share-action" id="shareApp">↗ Compartilhar</button>
+</div>
+<p id="appActionMessage" class="action-message" role="status" aria-live="polite"></p>
+</header>
 <section id="setup" class="panel" aria-labelledby="setupTitle">
 <h2 class="heading" id="setupTitle">Preparar partida</h2><p class="desc">Escolha os jogadores, o nível e o tempo. No modo disputa falada, o celular lê a pergunta e vocês competem para responder primeiro.</p>
 <div class="grid">
@@ -128,6 +152,8 @@
 <strong>📲 Instalar Cartas da Fé no celular</strong>
 <p id="pwaStatus">Preparando instalação e uso offline...</p>
 <button class="btn alt" id="installPwa" type="button" hidden>Instalar aplicativo</button>
+<a href="./index.html" download="Cartas_da_Fe_Offline.html" class="download-link" id="downloadHtml">⬇ Baixar jogo em HTML (offline)</a>
+<p class="voice-hint">Para instalar como app, acesse a versão publicada via HTTPS e toque em “Instalar no celular”. O HTML pode ser baixado separadamente.</p>
 </div>
 <button id="start" class="btn">Sortear e começar</button>
 <p class="minor">450 perguntas originais, com desafios adequados para crianças e fontes bíblicas e catequéticas. As perguntas não são copiadas de um baralho comercial.</p>
@@ -184,6 +210,16 @@
 <section id="results" class="panel hidden results" aria-labelledby="resultTitle"><div class="result-icon" aria-hidden="true">🏆</div><h2 class="heading" id="resultTitle">Fim da partida</h2><p id="resultSummary" class="desc" style="text-align:center"></p><div id="ranking" class="result-list"></div><div class="btnrow"><button id="again" class="btn">Jogar novamente</button><button id="menu" class="btn alt">Voltar ao início</button></div></section>
 <footer>Desafio independente inspirado na dinâmica de jogos de perguntas e respostas católicos. Conteúdo próprio, com referências bíblicas e catequéticas. Não é um produto oficial da Pius Edições. Funciona sem internet.</footer>
 </main>
+<div class="modal-scrim" id="appActionModal" hidden role="presentation">
+  <div class="action-modal" role="dialog" aria-modal="true" aria-labelledby="actionModalTitle">
+    <h2 id="actionModalTitle">Compartilhar Cartas da Fé</h2>
+    <p id="actionModalText">Envie o endereço do jogo para seus amigos.</p>
+    <label for="appShareUrl" class="sr-only">Link para o aplicativo</label>
+    <input id="appShareUrl" class="share-url" type="text" readonly spellcheck="false">
+    <button type="button" class="btn" id="appCopyUrl">Copiar link</button>
+    <button type="button" class="btn alt" id="appCloseModal">Fechar</button>
+  </div>
+</div>
 <div class="pwa-update" id="updatePwa" hidden role="status">
 <strong>Nova versão disponível</strong>
 <div>Atualize para obter melhorias. Se houver partida em andamento, termine antes de atualizar.</div>
@@ -444,6 +480,56 @@ $('miss').addEventListener('click',()=>voiceResolve(false));
 rebuildNames();
 initVoiceSettings();
 
+// Instalação e compartilhamento: fallback acessível para Android, iPhone e computador.
+const APP_PUBLIC_URL = 'https://jiomavj-tech.github.io/Cartas-da-f-/';
+const $appModal = document.getElementById('appActionModal');
+const $appMessage = document.getElementById('appActionMessage');
+function shareableAppUrl(){
+  const local = !/^https?:$/.test(location.protocol) || /^(localhost|127\.0\.1)$/.test(location.hostname);
+  return local ? APP_PUBLIC_URL : new URL('./',location.href).href;
+}
+function showAppModal(title,body,showLink=true){
+  document.getElementById('actionModalTitle').textContent=title;
+  document.getElementById('actionModalText').textContent=body;
+  document.getElementById('appShareUrl').value=shareableAppUrl();
+  document.getElementById('appShareUrl').hidden=!showLink;
+  document.getElementById('appCopyUrl').hidden=!showLink;
+  $appModal.hidden=false;
+  document.getElementById(showLink?'appCopyUrl':'appCloseModal').focus();
+}
+function closeAppModal(){$appModal.hidden=true;document.getElementById('shareApp').focus();}
+function showInstallInstructions(){
+  const local=location.protocol==='file:';
+  if (local){showAppModal('Instalar Cartas da Fé','Abra o jogo pelo endereço publicado no GitHub Pages (HTTPS), depois use o botão “Instalar no celular” ou o menu do navegador. O arquivo HTML baixado funciona como arquivo, mas não instala o PWA.');return;}
+  const ios=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  showAppModal('Instalar Cartas da Fé',ios?'No Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.':'No Chrome do Android, abra o menu ⋮ e escolha “Instalar app” ou “Adicionar à tela inicial”. Se não aparecer, confira o GitHub Pages e tente abrir novamente pelo Chrome.',false);
+}
+async function copyGameUrl(){
+  const value=document.getElementById('appShareUrl').value||shareableAppUrl();
+  try{
+    if(navigator.clipboard?.writeText) await navigator.clipboard.writeText(value);
+    else {const field=document.getElementById('appShareUrl');field.hidden=false;field.focus();field.select();if(!document.execCommand('copy')) throw new Error('clipboard unavailable');}
+    $appMessage.textContent='Link copiado! Cole no WhatsApp ou envie para seus amigos.';
+    $appModal.hidden=true;
+  }catch(e){
+    showAppModal('Copiar link','O navegador não autorizou a cópia automática. Toque no endereço, selecione tudo e copie manualmente.');
+    const field=document.getElementById('appShareUrl');field.focus();field.select();
+  }
+}
+async function shareApp(){
+  const url=shareableAppUrl();
+  if(navigator.share){
+    try{await navigator.share({title:'Cartas da Fé — Desafio Católico',text:'Vamos jogar Cartas da Fé? São 450 perguntas católicas para a família!',url});$appMessage.textContent='Compartilhamento concluído.';return;}
+    catch(e){if(e?.name==='AbortError')return;}
+  }
+  showAppModal('Compartilhar Cartas da Fé','Copie o endereço para enviar pelo WhatsApp, Telegram ou outro aplicativo.');
+}
+document.getElementById('shareApp').addEventListener('click',shareApp);
+document.getElementById('appCopyUrl').addEventListener('click',copyGameUrl);
+document.getElementById('appCloseModal').addEventListener('click',closeAppModal);
+$appModal.addEventListener('click',event=>{if(event.target===$appModal)closeAppModal();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$appModal.hidden)closeAppModal();});
+
 // PWA: instalação opcional e atualização sob controle do jogador.
 (function initPwa(){
   const status = document.getElementById('pwaStatus');
@@ -465,15 +551,18 @@ initVoiceSettings();
     if (!installed()) install.hidden=false;
     setStatus('Pronto para instalar na tela inicial e jogar sem internet.');
   });
-  install.addEventListener('click',async ()=>{
-    if (!deferredInstall) return;
+  async function promptInstall(){
+    if (installed()) {setStatus('O Cartas da Fé já está instalado neste aparelho.');return;}
+    if (!deferredInstall) {showInstallInstructions();return;}
     const prompt=deferredInstall;deferredInstall=null;install.hidden=true;
     try{await prompt.prompt();const answer=await prompt.userChoice;
       if(answer?.outcome==='accepted')setStatus('Instalação solicitada. O jogo aparecerá nos aplicativos.');
       else setStatus('Você pode instalar mais tarde pelo menu do Chrome.');
     }catch(e){setStatus('Use o menu ⋮ do Chrome e escolha “Instalar app”.');}
-  });
-  window.addEventListener('appinstalled',()=>{install.hidden=true;deferredInstall=null;setStatus('Aplicativo instalado! Você pode jogar offline.');});
+  }
+  install.addEventListener('click',promptInstall);
+  document.getElementById('installShortcut').addEventListener('click',promptInstall);
+  window.addEventListener('appinstalled',()=>{install.hidden=true;deferredInstall=null;setStatus('Aplicativo instalado! Você pode jogar offline.');document.getElementById('installShortcut').textContent='✓ Aplicativo instalado';document.getElementById('installShortcut').disabled=true;});
   updateButton.addEventListener('click',()=>{
     if(!registration?.waiting)return;
     applyingUpdate=true;updateButton.disabled=true;
