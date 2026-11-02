@@ -14,7 +14,7 @@ Jogo católico independente com 450 perguntas. Aplicativo instalável com arquiv
 
 ## Publicação GitHub Pages
 
-Em `Settings > Pages`, configurar `Deploy from a branch`, `main`, `/ (root)`. Abrir `https://jiomavj-tech.github.io/Cartas-da-f-/`. Para instalar, usar o botão do app ou menu ⋮ do Chrome > Instalar app.
+Em `Settings > Pages`, configurar `Deploy from a branch`, `main`, `/ (root)`. Abrir `https://jiomavj-tech.github.io/Cartas-da-fe/`. Para instalar, usar o botão do app ou menu ⋮ do Chrome > Instalar app.
 
 ## Sorteio das perguntas
 
