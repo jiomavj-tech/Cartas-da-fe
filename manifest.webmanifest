@@ -1,0 +1,39 @@
+{
+  "id": "./",
+  "name": "Cartas da Fé — Desafio Católico",
+  "short_name": "Cartas da Fé",
+  "description": "Quiz católico infantil com 450 perguntas, leitura em voz alta, cronômetro e disputa entre jogadores.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0F1C2B",
+  "theme_color": "#0F1C2B",
+  "categories": [
+    "education",
+    "games",
+    "kids"
+  ],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
