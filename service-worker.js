@@ -1,5 +1,5 @@
 /* Cartas da Fé — cache offline e atualização segura. */
-const VERSION = 'cartas-fe-2026.11.02.1';
+const VERSION = 'cartas-fe-2026.11.02.2';
 const APP_CACHE = VERSION + '-app';
 const APP_ASSETS = [
   './', './index.html', './manifest.webmanifest', './icon.svg',
