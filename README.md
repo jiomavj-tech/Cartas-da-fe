@@ -16,6 +16,10 @@ Jogo católico independente com 450 perguntas. Aplicativo instalável com arquiv
 
 Em `Settings > Pages`, configurar `Deploy from a branch`, `main`, `/ (root)`. Abrir `https://jiomavj-tech.github.io/Cartas-da-f-/`. Para instalar, usar o botão do app ou menu ⋮ do Chrome > Instalar app.
 
+## Sorteio das perguntas
+
+As cartas são sorteadas ao acaso, sem repetir dentro da mesma partida. Uma pergunta que saiu numa partida fica bloqueada nas 4 partidas seguintes e só depois volta ao sorteio. Para mudar esse número, altere `PARTIDAS_DE_BLOQUEIO` no `index.html` (e atualize `VERSION` no `service-worker.js`).
+
 ## Atualização
 
 Ao alterar qualquer arquivo pré-cacheado, atualizar `VERSION` no service-worker para renovar o cache. O app oferece um botão para atualizar sem interromper a partida. Dados de pontuação e histórico salvos em `localStorage` não são apagados.
